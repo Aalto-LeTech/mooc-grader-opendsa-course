@@ -1,0 +1,13 @@
+---
+title|i18n:
+  en: Insertion Sort
+  fi: Lisäysjärjestäminen
+
+view_type: .iframe.view
+ajax_type: access.types.ajax.storeSubmission
+
+iframe_src|i18n:
+  en: /AV/Development/insertionSortWithoutSwapPRO.html?JOP-lang=en
+  fi: /AV/Development/insertionSortWithoutSwapPRO.html?JOP-lang=fi
+iframe_width: 100%
+iframe_height: 691px

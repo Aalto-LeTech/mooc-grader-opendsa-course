@@ -1,0 +1,13 @@
+---
+title|i18n:
+  en: Order of Growth 1
+  fi: Funktioiden luokittelu 1
+
+view_type: .iframe.view
+ajax_type: access.types.ajax.storeSubmission
+
+iframe_src|i18n:
+  en: /AV/Development/sortingExercisePRO.html?JOP-lang=en&ex=orderOfGrowthEasy
+  fi: /AV/Development/sortingExercisePRO.html?JOP-lang=fi&ex=orderOfGrowthEasy
+iframe_width: 100%
+iframe_height: 1200px

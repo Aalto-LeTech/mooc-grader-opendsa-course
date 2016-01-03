@@ -1,0 +1,64 @@
+---
+name: OpenDSA
+description: Serves OpenDSA exercises.
+
+# The course default language which may be overridden with ?lang=xx.
+# Currently internal mooc-grader exercise messages support en and fi.
+# In addition, the exercise configuration supports languages, e.g.
+# title|i18n:
+#   en: A sample exercise
+#   fi: Mallitehtävä
+lang: en
+
+# The public course files to serve as /static/course_key/
+static_dir: OpenDSA
+
+# Course schedule and content for A+.
+start: 2016-01-01
+end: 2056-01-01
+#numerate_ignoring_modules: True
+modules:
+
+  - key: algorithm-analysis
+    name: Algorithm analysis
+    type: normal
+    children:
+      - key: order-of-growth-1
+        config: exercises/order_of_growth_easy.yaml
+        type: ajax
+      - key: order-of-growth-2
+        config: exercises/order_of_growth.yaml
+        type: ajax
+  - key: sorting-algorithms
+    name: Sorting algorithms
+    type: normal
+    children:
+      - key: insertion-sort
+        config: exercises/insertion_sort.yaml
+        type: ajax
+      - key: selection-sort
+        config: exercises/selection_sort.yaml
+        type: ajax
+
+# Module and exercise types to control frequent configuration sets.
+# Any values can be overridden in the item specific configuration.
+module_types:
+  normal:
+    open: 2016-01-01 12:00
+    duration: 10y
+    points_to_pass: 0
+    late_duration: 2d
+    late_penalty: 0.5
+exercise_types:
+  ajax:
+    category: online
+    max_submissions: 10
+    max_points: 100
+    points_to_pass: 0
+
+# A+ exercise categories.
+categories:
+  online:
+    name: Online exercises
+    points_to_pass: 0
+    description: The default exercise category

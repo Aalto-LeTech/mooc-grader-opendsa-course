@@ -1,0 +1,3 @@
+[submodule "OpenDSA"]
+	path = OpenDSA
+	url = https://github.com/OpenDSA/OpenDSA.git

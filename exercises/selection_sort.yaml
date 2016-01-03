@@ -1,0 +1,13 @@
+---
+title|i18n:
+  en: Selection Sort
+  fi: Valintajärjestäminen
+
+view_type: .iframe.view
+ajax_type: access.types.ajax.storeSubmission
+
+iframe_src|i18n:
+  en: /AV/Development/selectionSortPRO.html?JOP-lang=en
+  fi: /AV/Development/selectionSortPRO.html?JOP-lang=fi
+iframe_width: 100%
+iframe_height: 555px
