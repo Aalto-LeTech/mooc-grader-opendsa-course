@@ -1,51 +1,42 @@
-/* TODO write again for mooc-grader */
-
-/******** A+ submissions handling extension stuff ****/
+/**
+ * Overrides exercises for AJAX submit.
+ * Based on work of authors: Ville Karavirta, Samuel Marisa, Kasper Hellström
+ */
 (function ($) {
-  // give the JSAV random function the seed from the URL parameter
+
+  // Random can be seeded from URL.
   var seed = PARAMS.seed || Math.floor(Math.random() * 99999999999999).toString();
   JSAV.utils.rand.seedrandom(seed);
-  // override Math.random()
   Math.random = JSAV.utils.rand.random;
 
-  // empty the ODSA log
-  localStorage.setItem("event_data", []);
-  // events to be logged
-  var logEvents = ["odsa-exercise-init"];
-  // exercise log array
-  var exerciseLog = [];
-  $("body").on("jsav-log-event", function(event, eventData) {
-    if (logEvents.indexOf(eventData.type) !== -1) {
-      console.log(eventData);
-      exerciseLog.push(eventData);
-    }
-  });
-  // set ODSA.SETTINGS.MODULE_ORIGIN to *
   ODSA.SETTINGS.MODULE_ORIGIN = "*";
 
-  // change the default grading to "at end"
+  // Make harder to find hash secret from minified code.
+  var ajax_key = (function(chars) {
+    return chars.map(function(i) { return String.fromCharCode(i - 7); }).join('');
+  })([ 123, 62, 61, 120, 60, 59, 78, 125 ]);
+
+  // Grade "at end".
   var origExercise = JSAV.ext.exercise;
   JSAV.ext.exercise = function(model, reset, options) {
     options = $.extend(options, {feedback: "atend"});
     return origExercise.call(this, model, reset, options);
   };
 
-  // remove help and about buttons
+  // Remove help and about buttons.
   $("#help").remove();
   $("#about").remove();
 
-
-  // extend the JSAV translation file used by the interpreter _translate(label)
   var langExtension = {
     en: {
-      "A+success": "Your score was successfully submitted to A+.",
-      "A+error": "Error submitting your score to A+: ",
-      "A+failed": "Failed to submit your solution to A+"
+      "ajaxSuccess": "Your score was successfully recorded.",
+      "ajaxError": "Error while submitting your solution: ",
+      "ajaxFailed": "Unfortunately recordind your solution failed."
     },
     fi: {
-      "A+success": "Pisteesi lähetettiin A+:aan onnistuneesti.",
-      "A+error": "Pisteitä lähettäessä tapahtui virhe: ",
-      "A+failed": "Ratkaisuasi ei pystytty lähettämään A+:aan"
+      "ajaxSuccess": "Pisteesi tallennettiin onnistuneesti.",
+      "ajaxError": "Ratkaisuasi lähettäessä tapahtui virhe: ",
+      "ajaxFailed": "Valitettavasti ratkaisuasi ei pystytty tallentamaan."
     }
   };
   $.extend(true, JSAV._translations, langExtension);
@@ -54,157 +45,69 @@
     return exercise._jsondump();
   }
 
-  function getModelLog(exercise) {
-    return exercise._jsondump.apply({
-      jsav: exercise.modelav,
-      initialStructures: exercise.modelStructures
-    });
-  }
-
-  function getExerciseInput() {
-    for (var i = 0; i < exerciseLog.length; i++) {
-      var log = exerciseLog[i];
-      if (log.type = "odsa-exercise-init") {
-        return JSON.stringify(log.desc);
-      }
-    }
-    return "[]";
-  }
-
-
+  // Override exercise methods.
   var ep = JSAV._types.Exercise.prototype;
-  ep.origmodel = ep.showModelanswer;
-  ep.origreset = ep.reset;
+  ep.originalModel = ep.showModelanswer;
+  ep.originalReset = ep.reset;
 
-  ep.showModelanswer = function () {
-    var that = this;
-    // show spinner
-    $('.jsavexercisecontrols').addClass("active");
-
-    if (!PARAMS.model_url && !PARAMS.submit_url) {
-      // edX
-      window.parent.postMessage(JSON.stringify({
-        type: "jsav-model",
-        data: {
-          seed: seed,
-          exercise: ODSA.SETTINGS.AV_NAME,
-          log: getAnswerLog(this)
-        }}), "*");
-      this.origmodel();
-      // hide spinner
-      $('.jsavexercisecontrols').removeClass("active");
-    } else {
-      // A+
-      // make a post to tell the exercise server that the user wants to see the model answer
-      $.ajax(PARAMS.model_url, {
-        type: "POST",
-        data: {
-          answer: getAnswerLog(this),
-          log: JSON.stringify(exerciseLog),
-          input: getExerciseInput(),
-          submission_url: PARAMS.submission_url
-        }
-      })
-      .done(function (data) {
-        if (data.status === "OK") {
-          that.origmodel();
-        } else {
-          window.alert(data.message);
-        }
-        // hide spinner
-        $('.jsavexercisecontrols').removeClass("active");
-      });
-    }
+  ep.showModelanswer = function() {
+    this.modelSeenFlag = true;
     $('.jsavexercisecontrols input[name="grade"]').attr("disabled", "disabled");
+    this.originalModel();
   };
 
-  ep.reset = function () {
-    if (!this.initialStructures) {
-      // call the original reset function if there are no initial structures
-      this.origreset();
-    } else if (!PARAMS.reset_url && !PARAMS.submit_url) {
-      // edX
-      window.parent.postMessage(JSON.stringify({
-        type: "jsav-reset",
-        data: {
-          seed: seed,
-          exercise: ODSA.SETTINGS.AV_NAME,
-          log: getAnswerLog(this)
-        }}), "*");
-      window.location.reload();
-    } else {
-      // A+
-      $.get(PARAMS.reset_url, function (data) {
-        window.location.href = data;
-      });
-    }
+  ep.reset = function() {
+    this.originalReset();
+    delete this.modelSeenFlag;
+    $('.jsavexercisecontrols input[name="grade"]').removeAttr("disabled");
   };
 
   ep.showGrade = function () {
-    // show spinner
+    if (this.modelSeenFlag) {
+      return;
+    }
     $('.jsavexercisecontrols').addClass("active");
+    $('.jsavexercisecontrols input[name="grade"]').attr("disabled", "disabled");
+
     this.grade();
     this.jsav.logEvent({type: "jsav-exercise-grade-button", score: $.extend({}, this.score)});
     var trans = this.jsav._translate,
-        grade = this.score,
-        points = {};
+        answer = getAnswerLog(this),
+        grade = this.score;
 
-    if (PARAMS.max_points) {
-      points.correct = Math.round(grade.correct * parseInt(PARAMS.max_points, 10) / grade.total);
-      points.total = parseInt(PARAMS.max_points, 10);
-    } else {
-      points = grade;
-    }
+    var check = [PARAMS.submission_url,answer,grade.correct,grade.total].join(':');
+    var msg = trans("yourScore") + " " + grade.correct + " / " + grade.total + "\n\n";
 
-    var msg = trans("yourScore") + " " + points.correct + " / " + points.total + "\n\n";
+    $.ajax(PARAMS.submit_url, {
+      type: "POST",
+      data: {
+        checksum: md5(ajax_key + check),
+        submission_url: PARAMS.submission_url,
+        answer: answer,
+        points: grade.correct,
+        max_points: grade.total
+      }
+    })
+    .done(function (data) {
+      if (data.success) {
+        msg += trans("ajaxSuccess");
+      } else {
+        msg += trans("ajaxError") + data.message;
+      }
 
-    if (PARAMS.submit_url) {
-      // A+
-      $.ajax(PARAMS.submit_url, {
-        type: "POST",
-        data: {
-          answer: getAnswerLog(this),
-          model: getModelLog(this),
-          input: getExerciseInput(),
-          points: grade.correct,
-          maximum_points: grade.total,
-          submission_url: PARAMS.submission_url,
-          log: JSON.stringify(exerciseLog),
-          checksum: PARAMS.checksum
-        }
-      })
-      .done(function (data) {
-        if (data.status === "OK") {
-          msg += trans("A+success");
-        } else {
-          msg += trans("A+error") + data.message;
-        }
-        // refresh the points/stats in A+
-        window.parent.postMessage({type: "a-plus-refresh-stats"}, "*");
-        // setTimeout is used so that we don't block the event loop with our
-        // alert. This way the points/stats will be updated "at the same time"
-        // as we see the alert
-        setTimeout(function () { alert(msg); }, 0);
-      })
-      .fail(function () {
-        alert(trans("A+failed"));
-      });
-    } else {
-      // edX
-      window.parent.postMessage(JSON.stringify({
-        type: "jsav-submit",
-        data: {
-          score: grade,
-          seed: seed,
-          exercise: ODSA.SETTINGS.AV_NAME,
-          log: getAnswerLog(this)
-        }}), "*");
-      alert(msg);
-    }
-    // hide spinner
+      // Ask to refresh exercise info in A+.
+      window.parent.postMessage({type: "a-plus-refresh-stats"}, "*");
+
+      // setTimeout is used so that we don't block the event loop with our
+      // alert. This way the points/stats will be updated "at the same time"
+      // as we see the alert.
+      setTimeout(function () { alert(msg); }, 0);
+    })
+    .fail(function () {
+      alert(trans("ajaxFailed"));
+    });
+
     $('.jsavexercisecontrols').removeClass("active");
-    // disable grade button
-    $('.jsavexercisecontrols input[name="grade"]').attr("disabled", "disabled");
   };
 
 }(jQuery));

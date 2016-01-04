@@ -3,11 +3,13 @@ cd `dirname $0`
 
 if [ ! -d OpenDSA ]
 then
-  git clone --recursive https://github.com/OpenDSA/OpenDSA.git
+  git submodule init
+  git submodule update
 fi
 
 cd OpenDSA
 make pull
 
 cd ..
-uglifyjs A_plus_submission.js >> OpenDSA/lib/odsaAV-min.js
+cat md5.min.js >> OpenDSA/lib/odsaAV-min.js
+uglifyjs ajaxsubmit.js --mangle >> OpenDSA/lib/odsaAV-min.js
