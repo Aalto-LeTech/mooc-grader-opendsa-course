@@ -22,3 +22,12 @@ https://github.com/Aalto-LeTech/a-plus
 In `lib/odsaUtils.js` or `lib/odsaUtils-min.js` lines 751-762 the code is
 trying to fix code URLs and is broken for the required exercises. Temporary
 solution is to comment that block out.
+
+## Security
+
+* The grading system only knows a signed URL to submit for a certain exercise
+  and students.
+* The submission includes a hash signature over URL, answer, points and maximum
+  points. Forging these requires reverse engineering minified JavaScript.
+* The submission includes log of solving the exercise. The log can be
+  automatically reinspected in back-end or manually checked for suspected cases.
