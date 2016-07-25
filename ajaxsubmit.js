@@ -42,7 +42,8 @@
   $.extend(true, JSAV._translations, langExtension);
 
   function getAnswerLog(exercise) {
-    return exercise._jsondump();
+    // replace call removes non-ascii characters from jsondump
+    return exercise._jsondump().replace(/[^\x00-\x7F]/g, "");
   }
 
   // Override exercise methods.
