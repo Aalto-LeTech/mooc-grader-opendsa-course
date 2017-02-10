@@ -5,6 +5,9 @@ if [ ! -d OpenDSA ]
 then
   git submodule init
   git submodule update
+  cd OpenDSA
+  git checkout master
+  cd ..
 fi
 
 cd OpenDSA
